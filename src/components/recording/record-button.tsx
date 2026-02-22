@@ -11,8 +11,8 @@ export function RecordButton({ isRecording, isAnalyzing, onClick, disabled }: Re
   if (isAnalyzing) {
     return (
       <div className="relative flex items-center justify-center">
-        <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+        <div className="w-32 h-32 rounded-full bg-card flex items-center justify-center">
+          <div className="w-7 h-7 border-2 border-accent border-t-transparent rounded-full animate-spin" />
         </div>
         <p className="absolute -bottom-8 text-sm text-muted-foreground">Analyzing...</p>
       </div>
@@ -23,19 +23,19 @@ export function RecordButton({ isRecording, isAnalyzing, onClick, disabled }: Re
     <button
       onClick={onClick}
       disabled={disabled}
-      className="relative flex items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed"
+      className="relative flex items-center justify-center group disabled:opacity-40 disabled:cursor-not-allowed"
     >
       {/* Pulse ring when recording */}
       {isRecording && (
-        <div className="absolute w-32 h-32 rounded-full bg-accent/20 animate-pulse-ring" />
+        <div className="absolute w-32 h-32 rounded-full bg-accent/15 animate-pulse-ring" />
       )}
 
       {/* Main button */}
       <div
-        className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300 ${
+        className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all duration-200 ${
           isRecording
-            ? 'bg-accent shadow-lg shadow-accent/25'
-            : 'bg-card border-2 border-border hover:border-accent/50 hover:bg-accent/5'
+            ? 'bg-accent glow-accent'
+            : 'bg-card hover:bg-muted/50'
         }`}
       >
         {isRecording ? (

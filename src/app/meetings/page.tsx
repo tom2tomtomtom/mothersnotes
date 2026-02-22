@@ -40,15 +40,15 @@ export default function MeetingsPage() {
   };
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="max-w-4xl space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Meetings</h1>
-          <p className="text-muted-foreground mt-1">{meetings.length} meetings recorded</p>
+          <h1 className="text-3xl font-bold tracking-tight">Meetings</h1>
+          <p className="text-muted-foreground mt-2">{meetings.length} meetings recorded</p>
         </div>
         <button
           onClick={() => router.push('/record')}
-          className="bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors"
+          className="bg-foreground text-background px-4 py-2.5 rounded-md text-sm font-medium hover:opacity-90 transition-opacity duration-100"
         >
           New Meeting
         </button>
@@ -57,7 +57,7 @@ export default function MeetingsPage() {
       {/* Search */}
       <div className="relative">
         <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -71,37 +71,42 @@ export default function MeetingsPage() {
           placeholder="Search meetings..."
           value={searchQuery}
           onChange={(e) => handleSearch(e.target.value)}
-          className="w-full bg-card border border-border rounded-lg pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent/50"
+          className="w-full bg-card rounded-md pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/20 transition-shadow duration-150"
         />
       </div>
 
       {/* Meeting list */}
       {loading ? (
-        <div className="text-center py-12 text-muted-foreground">Loading...</div>
+        <div className="text-center py-16 text-muted-foreground">Loading...</div>
       ) : meetings.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No meetings yet</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="h-12 w-12 rounded-lg bg-card flex items-center justify-center mb-4">
+            <svg className="w-5 h-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}>
+              <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+            </svg>
+          </div>
+          <p className="text-muted-foreground text-sm">No meetings yet</p>
           <button
             onClick={() => router.push('/record')}
-            className="text-accent text-sm mt-2 hover:underline"
+            className="text-accent text-sm mt-3 hover:underline"
           >
             Record your first meeting
           </button>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1">
           {meetings.map((m) => (
             <div
               key={m.id}
-              className="bg-card border border-border rounded-lg p-4 hover:bg-muted transition-colors group"
+              className="bg-card hover:bg-muted/50 rounded-md p-4 transition-colors duration-100 group"
             >
               <div className="flex items-center justify-between">
                 <button
                   onClick={() => router.push(`/meetings/detail?id=${m.id}`)}
                   className="flex-1 text-left"
                 >
-                  <p className="font-medium">{m.title}</p>
-                  <div className="flex items-center gap-3 mt-1">
+                  <p className="font-medium text-sm">{m.title}</p>
+                  <div className="flex items-center gap-3 mt-1.5">
                     <span className="text-xs text-muted-foreground">
                       {new Date(m.started_at).toLocaleDateString('en-US', {
                         weekday: 'short',
@@ -132,10 +137,10 @@ export default function MeetingsPage() {
                 </button>
                 <button
                   onClick={() => handleDelete(m.id)}
-                  className="opacity-0 group-hover:opacity-100 p-2 text-muted-foreground hover:text-accent transition-all"
+                  className="opacity-0 group-hover:opacity-100 p-2 text-muted-foreground hover:text-accent transition-all duration-100"
                   title="Delete meeting"
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}>
                     <polyline points="3 6 5 6 21 6" />
                     <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
                   </svg>

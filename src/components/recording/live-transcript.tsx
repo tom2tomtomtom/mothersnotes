@@ -19,7 +19,7 @@ export function LiveTranscript({ segments, interimText }: LiveTranscriptProps) {
 
   if (segments.length === 0 && !interimText) {
     return (
-      <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
+      <div className="flex items-center justify-center h-48 text-muted-foreground text-sm rounded-lg bg-card">
         Transcript will appear here as you speak...
       </div>
     );
@@ -28,20 +28,20 @@ export function LiveTranscript({ segments, interimText }: LiveTranscriptProps) {
   return (
     <div
       ref={containerRef}
-      className="h-64 overflow-y-auto space-y-2 p-4 bg-card rounded-lg border border-border"
+      className="h-64 overflow-y-auto space-y-2 p-5 bg-card rounded-lg"
     >
       {segments.map((seg, i) => (
         <div key={i} className="text-sm">
           <span className="text-accent font-medium text-xs">{seg.speaker_label}</span>
-          <span className="text-muted-foreground text-xs ml-2">
+          <span className="text-muted-foreground text-xs ml-2 tabular-nums">
             {formatTime(seg.start_time)}
           </span>
-          <p className="text-foreground mt-0.5">{seg.content}</p>
+          <p className="text-foreground mt-0.5 leading-relaxed">{seg.content}</p>
         </div>
       ))}
       {interimText && (
         <div className="text-sm">
-          <p className="text-muted-foreground/50 italic">{interimText}</p>
+          <p className="text-muted-foreground/40 italic">{interimText}</p>
         </div>
       )}
     </div>

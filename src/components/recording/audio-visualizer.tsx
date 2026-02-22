@@ -25,8 +25,8 @@ export function AudioVisualizer({ analyser, isActive }: AudioVisualizerProps) {
 
       if (!isActive || !analyser.current) {
         // Draw flat line when not recording
-        ctx.strokeStyle = '#3f3f46';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#262838';
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(0, height / 2);
         ctx.lineTo(width, height / 2);
@@ -40,7 +40,7 @@ export function AudioVisualizer({ analyser, isActive }: AudioVisualizerProps) {
       analyser.current.getByteTimeDomainData(dataArray);
 
       ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
 
       const sliceWidth = width / bufferLength;
@@ -76,7 +76,7 @@ export function AudioVisualizer({ analyser, isActive }: AudioVisualizerProps) {
       ref={canvasRef}
       width={600}
       height={80}
-      className="w-full max-w-xl h-20 rounded-lg bg-card border border-border"
+      className="w-full max-w-xl h-20 rounded-lg bg-card"
     />
   );
 }

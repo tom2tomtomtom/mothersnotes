@@ -96,10 +96,10 @@ export default function RecordPage() {
   }, [electron, isRecording, startCapture, stopCapture, resetTranscript]);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
+    <div className="max-w-3xl mx-auto space-y-10">
       <div className="text-center">
-        <h1 className="text-2xl font-bold">Record Meeting</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl font-bold tracking-tight">Record Meeting</h1>
+        <p className="text-muted-foreground mt-2">
           {isRecording
             ? 'Recording in progress...'
             : isAnalyzing
@@ -109,7 +109,7 @@ export default function RecordPage() {
       </div>
 
       {error && (
-        <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 text-center">
+        <div className="bg-accent/8 rounded-lg p-4 text-center">
           <p className="text-sm text-accent">{error}</p>
         </div>
       )}
@@ -120,7 +120,7 @@ export default function RecordPage() {
       </div>
 
       {/* Record button */}
-      <div className="flex justify-center py-4">
+      <div className="flex justify-center py-6">
         <RecordButton
           isRecording={isRecording}
           isAnalyzing={isAnalyzing}
@@ -136,7 +136,7 @@ export default function RecordPage() {
 
       {/* Live transcript */}
       <div>
-        <h2 className="text-sm font-medium text-muted-foreground mb-2">Live Transcript</h2>
+        <h2 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Live Transcript</h2>
         <LiveTranscript segments={segments} interimText={interimText} />
       </div>
     </div>

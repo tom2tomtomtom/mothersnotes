@@ -1,19 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #09090b;
-  --color-foreground: #fafafa;
-  --color-card: #18181b;
-  --color-card-foreground: #fafafa;
-  --color-muted: #27272a;
-  --color-muted-foreground: #a1a1aa;
-  --color-border: #27272a;
+  /* Blue-tinted neutrals — technical, trustworthy feel */
+  --color-background: #0c0d14;
+  --color-foreground: #ededf0;
+  --color-card: #151721;
+  --color-card-foreground: #ededf0;
+  --color-muted: #1d1f2b;
+  --color-muted-foreground: #7d7f94;
+  --color-border: #1f2133;
   --color-accent: #ef4444;
-  --color-accent-soft: #dc26261a;
-  --color-success: #22c55e;
-  --color-warning: #eab308;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "SF Mono", "Fira Code", monospace;
+  --color-accent-soft: #ef44441a;
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+
+  /* Surface elevation system */
+  --color-surface-0: #0c0d14;
+  --color-surface-1: #151721;
+  --color-surface-2: #1d1f2b;
+  --color-surface-3: #262838;
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", "Fira Code", monospace;
 }
 
 * {
@@ -24,6 +32,9 @@ body {
   background-color: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   -webkit-app-region: drag;
 }
 
@@ -31,7 +42,22 @@ button, input, a, select, textarea {
   -webkit-app-region: no-drag;
 }
 
-/* Scrollbar */
+/* Typography refinement */
+h1, h2, h3 {
+  letter-spacing: -0.02em;
+}
+
+.text-xs, .text-sm {
+  letter-spacing: 0.01em;
+}
+
+/* Tabular numbers wherever numbers change */
+.tabular-nums,
+[data-timer] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scrollbar — minimal, refined */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -39,24 +65,44 @@ button, input, a, select, textarea {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: #262838;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+  background: #363850;
+}
+
+/* Layered shadows for depth */
+.shadow-elevated {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.15),
+    0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.shadow-float {
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.16);
+}
+
+.shadow-overlay {
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.12),
+    0 16px 48px rgba(0, 0, 0, 0.20);
 }
 
 /* Pulsing record button animation */
 @keyframes pulse-ring {
-  0% { transform: scale(1); opacity: 0.5; }
-  100% { transform: scale(1.5); opacity: 0; }
+  0% { transform: scale(1); opacity: 0.4; }
+  100% { transform: scale(1.6); opacity: 0; }
 }
 .animate-pulse-ring {
   animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
-/* Waveform animation */
-@keyframes waveform {
-  0%, 100% { height: 4px; }
-  50% { height: 100%; }
+/* Subtle glow for accent elements */
+.glow-accent {
+  box-shadow:
+    0 0 20px rgba(239, 68, 68, 0.15),
+    0 0 60px rgba(239, 68, 68, 0.05);
 }
