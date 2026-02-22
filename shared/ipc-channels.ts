@@ -22,6 +22,7 @@ export const IPC = {
   MEETINGS_GET: 'meetings:get',
   MEETINGS_DELETE: 'meetings:delete',
   MEETINGS_SEARCH: 'meetings:search',
+  MEETINGS_RENAME: 'meetings:rename',
 
   // Action Items
   ACTION_ITEMS_LIST: 'action-items:list',
@@ -32,6 +33,8 @@ export const IPC = {
   EXPORT_MARKDOWN: 'export:markdown',
   EXPORT_PDF: 'export:pdf',
   EXPORT_CLIPBOARD: 'export:clipboard',
+  EXPORT_GOOGLE_DOCS: 'export:google-docs',
+  EXPORT_GOOGLE_DOCS_STATUS: 'export:google-docs-status',
 
   // Settings
   SETTINGS_GET: 'settings:get',

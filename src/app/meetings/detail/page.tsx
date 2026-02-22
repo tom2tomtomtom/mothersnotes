@@ -12,6 +12,11 @@ function MeetingDetailContent() {
   const [meeting, setMeeting] = useState<MeetingDetail | null>(null);
   const [activeTab, setActiveTab] = useState<'summary' | 'discussion' | 'actions' | 'decisions' | 'transcript'>('summary');
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [googleDocsConfigured, setGoogleDocsConfigured] = useState(false);
+  const [exporting, setExporting] = useState<string | null>(null);
 
   const meetingId = searchParams.get('id');
 
@@ -21,13 +26,41 @@ function MeetingDetailContent() {
       setMeeting(m);
       setLoading(false);
     });
+    electron.getGoogleDocsStatus().then((status) => {
+      setGoogleDocsConfigured(status.configured);
+    });
   }, [electron, meetingId]);
 
-  const handleExport = async (format: 'markdown' | 'pdf' | 'clipboard') => {
+  const handleExport = async (format: 'markdown' | 'pdf' | 'clipboard' | 'google-docs') => {
     if (!electron || !meetingId) return;
-    if (format === 'markdown') await electron.exportMarkdown(meetingId);
-    else if (format === 'pdf') await electron.exportPDF(meetingId);
-    else await electron.exportClipboard(meetingId);
+    setExporting(format);
+    try {
+      if (format === 'markdown') await electron.exportMarkdown(meetingId);
+      else if (format === 'pdf') await electron.exportPDF(meetingId);
+      else if (format === 'google-docs') await electron.exportGoogleDocs(meetingId);
+      else await electron.exportClipboard(meetingId);
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const handleRename = async () => {
+    if (!electron || !meetingId || !editTitle.trim()) {
+      setIsEditing(false);
+      return;
+    }
+    const newTitle = editTitle.trim();
+    if (newTitle !== meeting?.title) {
+      await electron.renameMeeting(meetingId, newTitle);
+      setMeeting((prev) => prev ? { ...prev, title: newTitle } : prev);
+    }
+    setIsEditing(false);
+  };
+
+  const handleDelete = async () => {
+    if (!electron || !meetingId) return;
+    await electron.deleteMeeting(meetingId);
+    router.push('/meetings');
   };
 
   if (loading) {
@@ -67,7 +100,30 @@ function MeetingDetailContent() {
             </svg>
             Back
           </button>
-          <h1 className="text-2xl font-bold">{meeting.title}</h1>
+          {isEditing ? (
+            <input
+              autoFocus
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleRename();
+                if (e.key === 'Escape') setIsEditing(false);
+              }}
+              onBlur={handleRename}
+              className="text-2xl font-bold bg-transparent border-b-2 border-accent outline-none w-full"
+            />
+          ) : (
+            <h1
+              className="text-2xl font-bold cursor-pointer group flex items-center gap-2"
+              onClick={() => { setEditTitle(meeting.title); setIsEditing(true); }}
+            >
+              {meeting.title}
+              <svg className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                <path d="m15 5 4 4" />
+              </svg>
+            </h1>
+          )}
           <div className="flex items-center gap-3 mt-1">
             <span className="text-sm text-muted-foreground">
               {new Date(meeting.started_at).toLocaleDateString('en-US', {
@@ -87,11 +143,35 @@ function MeetingDetailContent() {
           </div>
         </div>
 
-        {/* Export */}
-        <div className="flex gap-2">
-          <button onClick={() => handleExport('clipboard')} className="text-sm px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors">Copy</button>
-          <button onClick={() => handleExport('markdown')} className="text-sm px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors">.md</button>
-          <button onClick={() => handleExport('pdf')} className="text-sm px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors">PDF</button>
+        {/* Export + Delete */}
+        <div className="flex gap-2 items-center">
+          <button onClick={() => handleExport('clipboard')} disabled={exporting === 'clipboard'} className="text-sm px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-50">Copy</button>
+          <button onClick={() => handleExport('markdown')} disabled={exporting === 'markdown'} className="text-sm px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-50">.md</button>
+          <button onClick={() => handleExport('pdf')} disabled={exporting === 'pdf'} className="text-sm px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-50">PDF</button>
+          {googleDocsConfigured && (
+            <button onClick={() => handleExport('google-docs')} disabled={exporting === 'google-docs'} className="text-sm px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-50">
+              {exporting === 'google-docs' ? 'Opening...' : 'Google Docs'}
+            </button>
+          )}
+
+          <div className="w-px h-6 bg-border mx-1" />
+
+          {deleteConfirm ? (
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm text-muted-foreground">Delete?</span>
+              <button onClick={handleDelete} className="text-sm px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors">Yes</button>
+              <button onClick={() => setDeleteConfirm(false)} className="text-sm px-2 py-1 border border-border rounded hover:bg-muted transition-colors">No</button>
+            </div>
+          ) : (
+            <button onClick={() => setDeleteConfirm(true)} className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors rounded-lg hover:bg-muted" title="Delete meeting">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                <line x1="10" y1="11" x2="10" y2="17" />
+                <line x1="14" y1="11" x2="14" y2="17" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 

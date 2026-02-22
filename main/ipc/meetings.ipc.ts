@@ -16,6 +16,16 @@ export function registerMeetingsIPC(): void {
     meetingsRepo.delete(id);
   });
 
+  ipcMain.handle(IPC.MEETINGS_RENAME, async (_event, id: string, title: string) => {
+    meetingsRepo.update(id, { title });
+    // Reindex FTS with new title
+    const detail = meetingsRepo.getDetail(id);
+    if (detail) {
+      const transcriptText = detail.transcript.map((t) => t.content).join(' ');
+      meetingsRepo.updateFTS(id, title, transcriptText, detail.notes?.executive_summary || '');
+    }
+  });
+
   ipcMain.handle(IPC.MEETINGS_SEARCH, async (_event, query: string) => {
     return meetingsRepo.search(query);
   });

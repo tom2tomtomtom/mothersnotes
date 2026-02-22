@@ -117,6 +117,7 @@ export interface ElectronAPI {
   getMeeting: (id: string) => Promise<MeetingDetail>;
   deleteMeeting: (id: string) => Promise<void>;
   searchMeetings: (query: string) => Promise<Meeting[]>;
+  renameMeeting: (id: string, title: string) => Promise<void>;
 
   // Action Items
   listActionItems: (meetingId?: string) => Promise<ActionItem[]>;
@@ -127,6 +128,8 @@ export interface ElectronAPI {
   exportMarkdown: (meetingId: string) => Promise<string>;
   exportPDF: (meetingId: string) => Promise<string>;
   exportClipboard: (meetingId: string) => Promise<void>;
+  exportGoogleDocs: (meetingId: string) => Promise<string>;
+  getGoogleDocsStatus: () => Promise<{ configured: boolean; authenticated: boolean }>;
 
   // Settings
   getSettings: () => Promise<AppSettings>;

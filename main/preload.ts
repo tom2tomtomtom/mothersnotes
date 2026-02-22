@@ -31,6 +31,7 @@ const electronAPI: ElectronAPI = {
   getMeeting: (id) => ipcRenderer.invoke(IPC.MEETINGS_GET, id),
   deleteMeeting: (id) => ipcRenderer.invoke(IPC.MEETINGS_DELETE, id),
   searchMeetings: (query) => ipcRenderer.invoke(IPC.MEETINGS_SEARCH, query),
+  renameMeeting: (id, title) => ipcRenderer.invoke(IPC.MEETINGS_RENAME, id, title),
 
   // Action Items
   listActionItems: (meetingId) => ipcRenderer.invoke(IPC.ACTION_ITEMS_LIST, meetingId),
@@ -41,6 +42,8 @@ const electronAPI: ElectronAPI = {
   exportMarkdown: (meetingId) => ipcRenderer.invoke(IPC.EXPORT_MARKDOWN, meetingId),
   exportPDF: (meetingId) => ipcRenderer.invoke(IPC.EXPORT_PDF, meetingId),
   exportClipboard: (meetingId) => ipcRenderer.invoke(IPC.EXPORT_CLIPBOARD, meetingId),
+  exportGoogleDocs: (meetingId) => ipcRenderer.invoke(IPC.EXPORT_GOOGLE_DOCS, meetingId),
+  getGoogleDocsStatus: () => ipcRenderer.invoke(IPC.EXPORT_GOOGLE_DOCS_STATUS),
 
   // Settings
   getSettings: () => ipcRenderer.invoke(IPC.SETTINGS_GET),
