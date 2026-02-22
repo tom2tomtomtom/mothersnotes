@@ -1,0 +1,57 @@
+{
+  "name": "mothersnotes",
+  "version": "0.1.0",
+  "description": "AI-powered meeting notes - transcribe, analyze, and organize your meetings",
+  "main": "dist/main/main/index.js",
+  "private": true,
+  "scripts": {
+    "dev:next": "next dev --port 3939",
+    "dev:electron": "tsc -p tsconfig.main.json && electron dist/main/main/index.js",
+    "dev": "concurrently -n next,electron \"npm run dev:next\" \"sleep 3 && npm run dev:electron\"",
+    "build:next": "next build",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build": "npm run build:next && npm run build:main",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@deepgram/sdk": "^3.9.0",
+    "better-sqlite3": "^11.7.0",
+    "electron-store": "^10.0.0",
+    "uuid": "^11.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/uuid": "^10.0.0",
+    "concurrently": "^9.1.0",
+    "electron": "^34.0.0",
+    "electron-builder": "^25.1.0",
+    "next": "^15.1.0",
+    "postcss": "^8.5.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.0"
+  },
+  "build": {
+    "appId": "com.mothersnotes.app",
+    "productName": "Mother's Notes",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "files": [
+      "dist/**/*",
+      "out/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+out/
+.next/
+release/
+*.wav
+*.mp3
+.env
+.env.local
+.DS_Store
+*.db
+*.db-wal
+*.db-shm
+shared/*.js
+shared/*.js.map
