@@ -6,10 +6,12 @@ import { transcriptsRepo } from '../database/repositories/transcripts.repo';
 
 let dgConnection: LiveClient | null = null;
 let currentMeetingId: string | null = null;
+let transcriptCount = 0;
 
 export const deepgramService = {
   async start(apiKey: string, meetingId: string): Promise<void> {
     currentMeetingId = meetingId;
+    transcriptCount = 0;
     const deepgram = createClient(apiKey);
 
     const connection = deepgram.listen.live({
@@ -53,7 +55,8 @@ export const deepgramService = {
       };
 
       if (isFinal && alt.transcript.trim()) {
-        // Save final transcript to database
+        transcriptCount++;
+        console.log(`[Deepgram] Final transcript #${transcriptCount}: "${alt.transcript.slice(0, 50)}..."`);
         transcriptsRepo.insert(segment);
         win.webContents.send(IPC.TRANSCRIPT_FINAL, segment);
       } else if (alt.transcript.trim()) {
@@ -77,19 +80,38 @@ export const deepgramService = {
 
   sendAudio(pcmData: Buffer): void {
     if (dgConnection) {
-      // Convert Buffer to ArrayBuffer for Deepgram SDK
       const ab = pcmData.buffer.slice(pcmData.byteOffset, pcmData.byteOffset + pcmData.byteLength);
       dgConnection.send(ab as any);
     }
   },
 
+  getTranscriptCount(): number {
+    return transcriptCount;
+  },
+
   async stop(): Promise<void> {
-    if (dgConnection) {
-      dgConnection.requestClose();
+    const conn = dgConnection;
+    if (conn) {
+      // Wait for connection to close gracefully
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => {
+          console.log('[Deepgram] Close timeout, forcing');
+          resolve();
+        }, 3000);
+
+        conn.on(LiveTranscriptionEvents.Close, () => {
+          clearTimeout(timeout);
+          resolve();
+        });
+
+        conn.requestClose();
+      });
       dgConnection = null;
     }
+
     if (currentMeetingId) {
       transcriptsRepo.deleteInterim(currentMeetingId);
+      console.log(`[Deepgram] Stopped. Total final transcripts: ${transcriptCount}`);
     }
     currentMeetingId = null;
   },

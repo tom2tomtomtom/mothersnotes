@@ -50,6 +50,22 @@ const electronAPI: ElectronAPI = {
   setSettings: (settings) => ipcRenderer.invoke(IPC.SETTINGS_SET, settings),
   validateApiKeys: (keys) => ipcRenderer.invoke(IPC.SETTINGS_VALIDATE_KEYS, keys),
   listAudioDevices: () => ipcRenderer.invoke(IPC.SETTINGS_LIST_AUDIO_DEVICES),
+
+  // Calendar
+  calendarConnect: () => ipcRenderer.invoke(IPC.CALENDAR_CONNECT),
+  calendarDisconnect: () => ipcRenderer.invoke(IPC.CALENDAR_DISCONNECT),
+  calendarGetStatus: () => ipcRenderer.invoke(IPC.CALENDAR_STATUS),
+  calendarGetPreferences: () => ipcRenderer.invoke(IPC.CALENDAR_GET_PREFERENCES),
+  calendarSetPreferences: (prefs) => ipcRenderer.invoke(IPC.CALENDAR_SET_PREFERENCES, prefs),
+  calendarToggle: (enabled) => ipcRenderer.invoke(IPC.CALENDAR_TOGGLE, enabled),
+  calendarFetchEvents: (daysAhead) => ipcRenderer.invoke(IPC.CALENDAR_FETCH_EVENTS, daysAhead),
+  calendarSchedule: (events) => ipcRenderer.invoke(IPC.CALENDAR_SCHEDULE, events),
+  calendarUnschedule: (eventIds) => ipcRenderer.invoke(IPC.CALENDAR_UNSCHEDULE, eventIds),
+  calendarGetScheduled: () => ipcRenderer.invoke(IPC.CALENDAR_GET_SCHEDULED),
+  onCalendarUpcoming: (cb) => onEvent(IPC.CALENDAR_UPCOMING, cb),
+  onCalendarMeetingStarting: (cb) => onEvent(IPC.CALENDAR_MEETING_STARTING, cb),
+  calendarDismiss: (eventId) => ipcRenderer.invoke(IPC.CALENDAR_DISMISS, eventId),
+  onCalendarMeetingApproaching: (cb) => onEvent(IPC.CALENDAR_MEETING_APPROACHING, cb),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

@@ -41,6 +41,22 @@ export const IPC = {
   SETTINGS_SET: 'settings:set',
   SETTINGS_VALIDATE_KEYS: 'settings:validate-keys',
   SETTINGS_LIST_AUDIO_DEVICES: 'settings:list-audio-devices',
+
+  // Calendar
+  CALENDAR_CONNECT: 'calendar:connect',
+  CALENDAR_DISCONNECT: 'calendar:disconnect',
+  CALENDAR_STATUS: 'calendar:status',
+  CALENDAR_UPCOMING: 'calendar:upcoming',
+  CALENDAR_MEETING_STARTING: 'calendar:meeting-starting',
+  CALENDAR_SET_PREFERENCES: 'calendar:set-preferences',
+  CALENDAR_GET_PREFERENCES: 'calendar:get-preferences',
+  CALENDAR_TOGGLE: 'calendar:toggle',
+  CALENDAR_FETCH_EVENTS: 'calendar:fetch-events',
+  CALENDAR_SCHEDULE: 'calendar:schedule',
+  CALENDAR_UNSCHEDULE: 'calendar:unschedule',
+  CALENDAR_GET_SCHEDULED: 'calendar:get-scheduled',
+  CALENDAR_MEETING_APPROACHING: 'calendar:meeting-approaching',
+  CALENDAR_DISMISS: 'calendar:dismiss',
 } as const;
 
 export type IPCChannel = (typeof IPC)[keyof typeof IPC];

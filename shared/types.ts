@@ -93,6 +93,29 @@ export interface AnalysisProgress {
   message: string;
 }
 
+// Calendar types
+export interface CalendarEvent {
+  eventId: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  attendees: string[];
+  meetingLink: string | null;
+}
+
+export interface CalendarPreferences {
+  enabled: boolean;
+  leadTimeMinutes: 1 | 2 | 5;
+  autoOpen: boolean;
+}
+
+export interface CalendarStatus {
+  configured: boolean;
+  authenticated: boolean;
+  email: string | null;
+  polling: boolean;
+}
+
 // Electron API exposed via preload
 export interface ElectronAPI {
   // Recording
@@ -136,6 +159,22 @@ export interface ElectronAPI {
   setSettings: (settings: Partial<AppSettings>) => Promise<void>;
   validateApiKeys: (keys: { deepgram?: string; anthropic?: string }) => Promise<{ deepgram: boolean; anthropic: boolean }>;
   listAudioDevices: () => Promise<{ deviceId: string; label: string }[]>;
+
+  // Calendar
+  calendarConnect: () => Promise<CalendarStatus>;
+  calendarDisconnect: () => Promise<void>;
+  calendarGetStatus: () => Promise<CalendarStatus>;
+  calendarGetPreferences: () => Promise<CalendarPreferences>;
+  calendarSetPreferences: (prefs: Partial<CalendarPreferences>) => Promise<CalendarPreferences>;
+  calendarToggle: (enabled: boolean) => Promise<void>;
+  calendarFetchEvents: (daysAhead?: number) => Promise<CalendarEvent[]>;
+  calendarSchedule: (events: CalendarEvent[]) => Promise<void>;
+  calendarUnschedule: (eventIds: string[]) => Promise<void>;
+  calendarGetScheduled: () => Promise<CalendarEvent[]>;
+  onCalendarUpcoming: (callback: (events: CalendarEvent[]) => void) => () => void;
+  onCalendarMeetingStarting: (callback: (event: CalendarEvent) => void) => () => void;
+  calendarDismiss: (eventId: string) => Promise<void>;
+  onCalendarMeetingApproaching: (callback: (event: CalendarEvent) => void) => () => void;
 }
 
 declare global {

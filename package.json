@@ -18,10 +18,12 @@
     "@anthropic-ai/sdk": "^0.39.0",
     "@deepgram/sdk": "^3.9.0",
     "better-sqlite3": "^11.7.0",
+    "dotenv": "^17.3.1",
     "electron-store": "^10.0.0",
     "uuid": "^11.0.0"
   },
   "devDependencies": {
+    "@electron/rebuild": "^4.0.3",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
@@ -43,12 +45,22 @@
     "productName": "Mother's Notes",
     "mac": {
       "category": "public.app-category.productivity",
+      "target": ["dmg", "zip"],
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist"
     },
+    "win": {
+      "target": ["nsis"]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false
+    },
     "files": [
       "dist/**/*",
-      "out/**/*"
+      "out/**/*",
+      ".env.local"
     ],
     "directories": {
       "output": "release"

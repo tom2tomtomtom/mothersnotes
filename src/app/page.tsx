@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useElectron } from '../hooks/use-electron';
-import type { Meeting, ActionItem } from '@shared/types';
+import type { Meeting, ActionItem, CalendarEvent } from '@shared/types';
 
 export default function DashboardPage() {
   const electron = useElectron();
   const router = useRouter();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [pendingActions, setPendingActions] = useState<ActionItem[]>([]);
+  const [upcomingCalendar, setUpcomingCalendar] = useState<CalendarEvent[]>([]);
   useEffect(() => {
     if (!electron) return;
 
@@ -17,6 +18,13 @@ export default function DashboardPage() {
     electron.listActionItems().then((items) =>
       setPendingActions(items.filter((a) => !a.completed).slice(0, 5))
     );
+
+    // Listen for upcoming calendar events
+    const unsub = electron.onCalendarUpcoming((events) => {
+      setUpcomingCalendar(events.slice(0, 3));
+    });
+
+    return unsub;
   }, [electron]);
 
   return (
@@ -44,6 +52,49 @@ export default function DashboardPage() {
           </div>
         </div>
       </button>
+
+      {/* Upcoming meetings from calendar */}
+      {upcomingCalendar.length > 0 && (
+        <div>
+          <h2 className="text-base font-semibold mb-4">Upcoming Meetings</h2>
+          <div className="space-y-1.5">
+            {upcomingCalendar.map((event) => {
+              const startDate = new Date(event.startTime);
+              const minutesUntil = Math.max(0, Math.round((startDate.getTime() - Date.now()) / 60000));
+              return (
+                <div
+                  key={event.eventId}
+                  className="bg-card rounded-md p-4 flex items-center justify-between"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm truncate">{event.title}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                      {' '}
+                      {minutesUntil <= 0
+                        ? '- Starting now'
+                        : `- in ${minutesUntil}min`}
+                      {event.attendees.length > 0 &&
+                        ` - ${event.attendees.length} attendee${event.attendees.length === 1 ? '' : 's'}`}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      try {
+                        sessionStorage.setItem('calendarEvent', JSON.stringify(event));
+                      } catch {}
+                      router.push('/record');
+                    }}
+                    className="ml-4 text-xs px-3 py-1.5 bg-accent/10 text-accent rounded-md hover:bg-accent/20 transition-colors duration-100 shrink-0"
+                  >
+                    Record
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-5">

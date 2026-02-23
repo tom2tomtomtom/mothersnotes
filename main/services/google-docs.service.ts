@@ -1,168 +1,5 @@
-import { shell, app } from 'electron';
-import fs from 'fs';
-import path from 'path';
-import http from 'http';
-import { URL } from 'url';
-
-const TOKEN_PATH = () => path.join(app.getPath('userData'), 'google-token.json');
-const REDIRECT_PORT = 48372;
-const REDIRECT_URI = `http://localhost:${REDIRECT_PORT}/oauth2callback`;
-const SCOPES = ['https://www.googleapis.com/auth/documents', 'https://www.googleapis.com/auth/drive.file'];
-
-interface TokenData {
-  access_token: string;
-  refresh_token: string;
-  expiry_date: number;
-}
-
-function getCredentials(): { clientId: string; clientSecret: string } | null {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return null;
-  return { clientId, clientSecret };
-}
-
-function loadToken(): TokenData | null {
-  try {
-    const data = fs.readFileSync(TOKEN_PATH(), 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    return null;
-  }
-}
-
-function saveToken(token: TokenData): void {
-  fs.writeFileSync(TOKEN_PATH(), JSON.stringify(token), 'utf-8');
-}
-
-async function exchangeCode(code: string, clientId: string, clientSecret: string): Promise<TokenData> {
-  const params = new URLSearchParams({
-    code,
-    client_id: clientId,
-    client_secret: clientSecret,
-    redirect_uri: REDIRECT_URI,
-    grant_type: 'authorization_code',
-  });
-
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params.toString(),
-  });
-
-  const data = (await res.json()) as any;
-  if (data.error) throw new Error(`OAuth error: ${data.error_description || data.error}`);
-
-  return {
-    access_token: data.access_token,
-    refresh_token: data.refresh_token,
-    expiry_date: Date.now() + data.expires_in * 1000,
-  };
-}
-
-async function refreshAccessToken(token: TokenData, clientId: string, clientSecret: string): Promise<TokenData> {
-  const params = new URLSearchParams({
-    refresh_token: token.refresh_token,
-    client_id: clientId,
-    client_secret: clientSecret,
-    grant_type: 'refresh_token',
-  });
-
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params.toString(),
-  });
-
-  const data = (await res.json()) as any;
-  if (data.error) throw new Error(`Token refresh error: ${data.error_description || data.error}`);
-
-  return {
-    access_token: data.access_token,
-    refresh_token: token.refresh_token,
-    expiry_date: Date.now() + data.expires_in * 1000,
-  };
-}
-
-async function getAccessToken(clientId: string, clientSecret: string): Promise<string> {
-  let token = loadToken();
-
-  if (token) {
-    // Refresh if expired (with 60s buffer)
-    if (Date.now() > token.expiry_date - 60000) {
-      token = await refreshAccessToken(token, clientId, clientSecret);
-      saveToken(token);
-    }
-    return token.access_token;
-  }
-
-  // No token — run OAuth consent flow
-  token = await runOAuthFlow(clientId, clientSecret);
-  saveToken(token);
-  return token.access_token;
-}
-
-function runOAuthFlow(clientId: string, clientSecret: string): Promise<TokenData> {
-  return new Promise((resolve, reject) => {
-    const server = http.createServer(async (req, res) => {
-      try {
-        const url = new URL(req.url || '', `http://localhost:${REDIRECT_PORT}`);
-        if (url.pathname !== '/oauth2callback') {
-          res.writeHead(404);
-          res.end();
-          return;
-        }
-
-        const code = url.searchParams.get('code');
-        const error = url.searchParams.get('error');
-
-        if (error) {
-          res.writeHead(200, { 'Content-Type': 'text/html' });
-          res.end('<html><body><h2>Authorization denied.</h2><p>You can close this tab.</p></body></html>');
-          server.close();
-          reject(new Error(`OAuth denied: ${error}`));
-          return;
-        }
-
-        if (!code) {
-          res.writeHead(400);
-          res.end('Missing code');
-          server.close();
-          reject(new Error('No authorization code received'));
-          return;
-        }
-
-        const token = await exchangeCode(code, clientId, clientSecret);
-        res.writeHead(200, { 'Content-Type': 'text/html' });
-        res.end('<html><body><h2>Authorized!</h2><p>You can close this tab and return to Mother\'s Notes.</p></body></html>');
-        server.close();
-        resolve(token);
-      } catch (err) {
-        res.writeHead(500);
-        res.end('Error');
-        server.close();
-        reject(err);
-      }
-    });
-
-    server.listen(REDIRECT_PORT, () => {
-      const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-      authUrl.searchParams.set('client_id', clientId);
-      authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
-      authUrl.searchParams.set('response_type', 'code');
-      authUrl.searchParams.set('scope', SCOPES.join(' '));
-      authUrl.searchParams.set('access_type', 'offline');
-      authUrl.searchParams.set('prompt', 'consent');
-      shell.openExternal(authUrl.toString());
-    });
-
-    // Timeout after 2 minutes
-    setTimeout(() => {
-      server.close();
-      reject(new Error('OAuth flow timed out'));
-    }, 120000);
-  });
-}
+import { shell } from 'electron';
+import { googleAuthService } from './google-auth.service';
 
 // Convert markdown to Google Docs API requests
 function markdownToDocsRequests(markdown: string): any[] {
@@ -307,17 +144,14 @@ function markdownToDocsRequests(markdown: string): any[] {
 
 export const googleDocsService = {
   getStatus(): { configured: boolean; authenticated: boolean } {
-    const creds = getCredentials();
-    if (!creds) return { configured: false, authenticated: false };
-    const token = loadToken();
-    return { configured: true, authenticated: !!token };
+    return {
+      configured: googleAuthService.isConfigured(),
+      authenticated: googleAuthService.isAuthenticated(),
+    };
   },
 
   async exportToGoogleDocs(markdown: string, title: string): Promise<string> {
-    const creds = getCredentials();
-    if (!creds) throw new Error('Google credentials not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env.local');
-
-    const accessToken = await getAccessToken(creds.clientId, creds.clientSecret);
+    const accessToken = await googleAuthService.getAccessToken();
 
     // Create blank document
     const createRes = await fetch('https://docs.googleapis.com/v1/documents', {

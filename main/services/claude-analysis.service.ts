@@ -1,4 +1,5 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { spawn } from 'child_process';
+import path from 'path';
 import { getMainWindow } from '../index';
 import { IPC } from '../../shared/ipc-channels';
 import { transcriptsRepo } from '../database/repositories/transcripts.repo';
@@ -36,6 +37,33 @@ IMPORTANT: Respond with valid JSON matching this exact schema:
   "sentiment": "string"
 }`;
 
+function callClaudeViaWorker(apiKey: string, model: string, systemPrompt: string, userMessage: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const workerPath = path.join(__dirname, '..', 'utils', 'claude-worker.js');
+    const child = spawn('node', [workerPath], { stdio: ['pipe', 'pipe', 'pipe'] });
+
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk: Buffer) => (stdout += chunk.toString()));
+    child.stderr.on('data', (chunk: Buffer) => (stderr += chunk.toString()));
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve(stdout);
+      } else {
+        reject(new Error(stderr || `Worker exited with code ${code}`));
+      }
+    });
+
+    child.on('error', (err) => reject(err));
+
+    // Send input via stdin
+    const input = JSON.stringify({ apiKey, model, system: systemPrompt, userMessage });
+    child.stdin.write(input);
+    child.stdin.end();
+  });
+}
+
 export const claudeAnalysisService = {
   async analyze(meetingId: string): Promise<void> {
     const win = getMainWindow();
@@ -58,36 +86,19 @@ export const claudeAnalysisService = {
         throw new Error('No transcript available for analysis');
       }
 
+      console.log(`[Claude Analysis] Transcript length: ${transcript.length} chars`);
       sendProgress('analyzing', 'Claude is analyzing your meeting...');
 
-      const client = new Anthropic({ apiKey: settings.anthropicApiKey });
-      const model = settings.claudeModel || 'claude-sonnet-4-5-20250514';
-
-      const response = await client.messages.create({
+      const model = settings.claudeModel || 'claude-sonnet-4-6';
+      const responseText = await callClaudeViaWorker(
+        settings.anthropicApiKey,
         model,
-        max_tokens: 8192,
-        system: [
-          {
-            type: 'text',
-            text: SYSTEM_PROMPT,
-            cache_control: { type: 'ephemeral' },
-          },
-        ],
-        messages: [
-          {
-            role: 'user',
-            content: `Here is the meeting transcript:\n\n${transcript}`,
-          },
-        ],
-      });
-
-      const textContent = response.content.find((c) => c.type === 'text');
-      if (!textContent || textContent.type !== 'text') {
-        throw new Error('No text response from Claude');
-      }
+        SYSTEM_PROMPT,
+        `Here is the meeting transcript:\n\n${transcript}`
+      );
 
       // Parse JSON from response (handle markdown code blocks)
-      let jsonText = textContent.text.trim();
+      let jsonText = responseText.trim();
       if (jsonText.startsWith('```')) {
         jsonText = jsonText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
       }
@@ -139,18 +150,10 @@ export const claudeAnalysisService = {
 
       // Update meeting title and status
       const title = analysis.title || 'Meeting Notes';
-      meetingsRepo.update(meetingId, {
-        title,
-        status: 'completed',
-      } as any);
+      meetingsRepo.update(meetingId, { title, status: 'completed' } as any);
 
       // Update FTS index
-      meetingsRepo.updateFTS(
-        meetingId,
-        title,
-        transcript,
-        analysis.executive_summary || ''
-      );
+      meetingsRepo.updateFTS(meetingId, title, transcript, analysis.executive_summary || '');
 
       sendProgress('complete', 'Analysis complete!');
 

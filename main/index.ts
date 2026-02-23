@@ -7,6 +7,9 @@ import { registerAnalysisIPC } from './ipc/analysis.ipc';
 import { registerMeetingsIPC } from './ipc/meetings.ipc';
 import { registerExportIPC } from './ipc/export.ipc';
 import { registerSettingsIPC } from './ipc/settings.ipc';
+import { registerCalendarIPC } from './ipc/calendar.ipc';
+import { googleCalendarService } from './services/google-calendar.service';
+import { googleAuthService } from './services/google-auth.service';
 
 const isDev = !app.isPackaged;
 
@@ -51,11 +54,25 @@ app.whenReady().then(() => {
   registerAnalysisIPC();
   registerExportIPC();
   registerSettingsIPC();
+  registerCalendarIPC();
 
   createWindow();
 
+  // Auto-start calendar polling if enabled and authenticated
+  const calPrefs = googleCalendarService.getPreferences();
+  if (calPrefs.enabled && googleAuthService.isAuthenticated()) {
+    googleCalendarService.start();
+  }
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+
+  // Re-create window when calendar triggers meeting alert and all windows are closed (macOS)
+  app.on('second-instance', () => {
+    if (mainWindow === null) {
       createWindow();
     }
   });

@@ -1,48 +1,49 @@
 import { app } from 'electron';
 import fs from 'fs';
 import path from 'path';
+import dotenv from 'dotenv';
 import type { AppSettings } from '../../shared/types';
+
+// Load .env.local — check packaged app resources first, then project root (dev)
+const isDev = !app.isPackaged;
+const envPaths = isDev
+  ? [path.join(__dirname, '..', '..', '..', '..', '.env.local')]
+  : [
+      path.join(process.resourcesPath, 'app', '.env.local'),
+      path.join(process.resourcesPath, '.env.local'),
+    ];
+
+for (const p of envPaths) {
+  if (fs.existsSync(p)) {
+    dotenv.config({ path: p });
+    break;
+  }
+}
 
 const defaults: AppSettings = {
   deepgramApiKey: '',
   anthropicApiKey: '',
-  claudeModel: 'claude-sonnet-4-5-20250514',
+  claudeModel: 'claude-sonnet-4-6',
   audioDeviceId: null,
   storagePath: '',
 };
 
-function getSettingsPath(): string {
-  return path.join(app.getPath('userData'), 'settings.json');
-}
-
-function readSettings(): AppSettings {
-  try {
-    const raw = fs.readFileSync(getSettingsPath(), 'utf-8');
-    return { ...defaults, ...JSON.parse(raw) };
-  } catch {
-    return { ...defaults };
-  }
-}
-
-function writeSettings(settings: AppSettings): void {
-  const dir = path.dirname(getSettingsPath());
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  fs.writeFileSync(getSettingsPath(), JSON.stringify(settings, null, 2));
-}
-
 export const settingsService = {
   getAll(): AppSettings {
-    return readSettings();
+    return {
+      deepgramApiKey: process.env.DEEPGRAM_API_KEY || defaults.deepgramApiKey,
+      anthropicApiKey: process.env.ANTHROPIC_API_KEY || defaults.anthropicApiKey,
+      claudeModel: process.env.CLAUDE_MODEL || defaults.claudeModel,
+      audioDeviceId: defaults.audioDeviceId,
+      storagePath: defaults.storagePath,
+    };
   },
 
-  set(updates: Partial<AppSettings>): void {
-    const current = readSettings();
-    writeSettings({ ...current, ...updates });
+  set(_updates: Partial<AppSettings>): void {
+    // No-op: keys come from .env.local
   },
 
   get<K extends keyof AppSettings>(key: K): AppSettings[K] {
-    return readSettings()[key];
+    return this.getAll()[key];
   },
 };
