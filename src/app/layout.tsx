@@ -11,13 +11,22 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen bg-background antialiased">
-        <div className="flex h-screen">
+    <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      </head>
+      <body className="bg-background antialiased">
+        <div className="flex h-screen overflow-hidden">
           <Sidebar />
-          <main className="flex-1 overflow-auto min-h-0">
-            <div className="pt-10 px-10 pb-12">{children}</div>
-          </main>
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* Draggable title bar area */}
+            <div className="app-drag h-10 shrink-0" />
+            <main className="flex-1 overflow-y-auto min-h-0">
+              <div className="px-10 pb-12">{children}</div>
+            </main>
+          </div>
         </div>
         <CalendarNavigator />
         <MeetingPrompt />

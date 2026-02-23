@@ -15,10 +15,10 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-56 bg-card flex flex-col h-full shrink-0">
-      {/* Logo area */}
-      <div className="h-14 flex items-center px-5">
-        <h1 className="text-sm font-semibold tracking-wide text-foreground">
+    <aside className="w-56 tartan-dark flex flex-col h-full shrink-0">
+      {/* Traffic light spacer + logo — draggable for window movement */}
+      <div className="app-drag pt-6 pb-3 px-5">
+        <h1 className="text-sm font-bold tracking-wide text-white">
           Mother&apos;s Notes
         </h1>
       </div>
@@ -33,8 +33,8 @@ export function Sidebar() {
               href={href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors duration-100 ${
                 isActive
-                  ? 'bg-muted text-foreground font-medium'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  ? 'bg-white/15 text-white font-medium backdrop-blur-sm'
+                  : 'text-white/60 hover:text-white hover:bg-white/10'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -46,7 +46,7 @@ export function Sidebar() {
 
       {/* Version */}
       <div className="px-5 py-4">
-        <p className="text-xs text-muted-foreground/60">v0.1.0</p>
+        <p className="text-xs text-sidebar-foreground/40">v0.1.0</p>
       </div>
     </aside>
   );

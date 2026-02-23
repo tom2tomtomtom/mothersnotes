@@ -1,5 +1,4 @@
-import { spawn } from 'child_process';
-import path from 'path';
+import https from 'https';
 import { getMainWindow } from '../index';
 import { IPC } from '../../shared/ipc-channels';
 import { transcriptsRepo } from '../database/repositories/transcripts.repo';
@@ -37,30 +36,58 @@ IMPORTANT: Respond with valid JSON matching this exact schema:
   "sentiment": "string"
 }`;
 
-function callClaudeViaWorker(apiKey: string, model: string, systemPrompt: string, userMessage: string): Promise<string> {
+function callClaude(apiKey: string, model: string, systemPrompt: string, userMessage: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const workerPath = path.join(__dirname, '..', 'utils', 'claude-worker.js');
-    const child = spawn('node', [workerPath], { stdio: ['pipe', 'pipe', 'pipe'] });
-
-    let stdout = '';
-    let stderr = '';
-    child.stdout.on('data', (chunk: Buffer) => (stdout += chunk.toString()));
-    child.stderr.on('data', (chunk: Buffer) => (stderr += chunk.toString()));
-
-    child.on('close', (code) => {
-      if (code === 0) {
-        resolve(stdout);
-      } else {
-        reject(new Error(stderr || `Worker exited with code ${code}`));
-      }
+    const body = JSON.stringify({
+      model,
+      max_tokens: 8192,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMessage }],
     });
 
-    child.on('error', (err) => reject(err));
+    const req = https.request(
+      {
+        hostname: 'api.anthropic.com',
+        path: '/v1/messages',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-Length': Buffer.byteLength(body),
+        },
+      },
+      (res) => {
+        let data = '';
+        res.on('data', (chunk: Buffer) => (data += chunk.toString()));
+        res.on('end', () => {
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            try {
+              const parsed = JSON.parse(data);
+              const text = parsed.content?.[0]?.text;
+              if (text) {
+                resolve(text);
+              } else {
+                reject(new Error('No text in Claude response'));
+              }
+            } catch {
+              reject(new Error('Failed to parse Claude response'));
+            }
+          } else {
+            reject(new Error(`Claude API error ${res.statusCode}: ${data.slice(0, 300)}`));
+          }
+        });
+      }
+    );
 
-    // Send input via stdin
-    const input = JSON.stringify({ apiKey, model, system: systemPrompt, userMessage });
-    child.stdin.write(input);
-    child.stdin.end();
+    req.on('error', (err) => reject(new Error('Network error: ' + err.message)));
+    req.setTimeout(120_000, () => {
+      req.destroy();
+      reject(new Error('Claude API timeout'));
+    });
+
+    req.write(body);
+    req.end();
   });
 }
 
@@ -90,7 +117,7 @@ export const claudeAnalysisService = {
       sendProgress('analyzing', 'Claude is analyzing your meeting...');
 
       const model = settings.claudeModel || 'claude-sonnet-4-6';
-      const responseText = await callClaudeViaWorker(
+      const responseText = await callClaude(
         settings.anthropicApiKey,
         model,
         SYSTEM_PROMPT,
