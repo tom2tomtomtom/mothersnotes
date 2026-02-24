@@ -145,10 +145,11 @@ function triggerMeetingAlert(event: CalendarEvent): void {
   if (win) {
     win.webContents.send(IPC.CALENDAR_MEETING_STARTING, event);
     if (win.isMinimized()) win.restore();
+    win.show();
     win.focus();
   }
 
-  // Also show a notification in case the app is in the background
+  // Native notification so it appears even when app is minimised/hidden
   const attendeeText = event.attendees.length > 0
     ? `with ${event.attendees.slice(0, 3).join(', ')}${event.attendees.length > 3 ? '...' : ''}`
     : '';
@@ -161,6 +162,7 @@ function triggerMeetingAlert(event: CalendarEvent): void {
   notification.on('click', () => {
     if (win) {
       if (win.isMinimized()) win.restore();
+      win.show();
       win.focus();
     }
   });
@@ -225,6 +227,24 @@ async function poll(): Promise<void> {
         if (win) {
           win.webContents.send(IPC.CALENDAR_MEETING_APPROACHING, event);
         }
+
+        // Native notification so it appears even when app is minimised
+        const mins = Math.max(1, Math.round(timeUntilStart / 60000));
+        const attendees = event.attendees.length > 0
+          ? `with ${event.attendees.slice(0, 3).join(', ')}${event.attendees.length > 3 ? '...' : ''}`
+          : '';
+        const nativeNotif = new Notification({
+          title: `Meeting in ${mins} min`,
+          body: `${event.title} ${attendees}`.trim(),
+        });
+        nativeNotif.on('click', () => {
+          if (win) {
+            if (win.isMinimized()) win.restore();
+            win.show();
+            win.focus();
+          }
+        });
+        nativeNotif.show();
       }
     }
   } catch (err) {
