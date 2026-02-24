@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Self-hosted Space Grotesk — no external network dependency */
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./fonts/SpaceGrotesk.woff2') format('woff2');
+}
+
 @theme {
   /* Mother London editorial palette — off-white, near-black, earth tones */
   --color-background: #F5F4F0;
